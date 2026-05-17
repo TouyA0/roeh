@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Background -->
+  <rect width="512" height="512" rx="112" fill="#0D0F12"/>
+
+  <!-- Outer eye / iris ring -->
+  <circle cx="256" cy="256" r="148" fill="none" stroke="#4F8EF7" stroke-width="10" opacity="0.35"/>
+
+  <!-- Iris -->
+  <circle cx="256" cy="256" r="108" fill="#0D1929"/>
+  <circle cx="256" cy="256" r="108" fill="none" stroke="#4F8EF7" stroke-width="6" opacity="0.6"/>
+
+  <!-- Pupil -->
+  <circle cx="256" cy="256" r="56" fill="#1A2A4A"/>
+  <circle cx="256" cy="256" r="56" fill="none" stroke="#4F8EF7" stroke-width="3" opacity="0.9"/>
+
+  <!-- Inner glow dot -->
+  <circle cx="256" cy="256" r="22" fill="#4F8EF7" opacity="0.9"/>
+  <circle cx="256" cy="256" r="12" fill="#A8C8FF"/>
+
+  <!-- Highlight -->
+  <circle cx="230" cy="232" r="8" fill="white" opacity="0.5"/>
+
+  <!-- Scan lines (subtle) -->
+  <line x1="108" y1="256" x2="364" y2="256" stroke="#4F8EF7" stroke-width="1.5" opacity="0.18"/>
+  <line x1="256" y1="108" x2="256" y2="404" stroke="#4F8EF7" stroke-width="1.5" opacity="0.18"/>
+
+  <!-- Corner tick marks -->
+  <path d="M 120 120 L 120 150 M 120 120 L 150 120" stroke="#4F8EF7" stroke-width="4" stroke-linecap="round" opacity="0.5"/>
+  <path d="M 392 120 L 392 150 M 392 120 L 362 120" stroke="#4F8EF7" stroke-width="4" stroke-linecap="round" opacity="0.5"/>
+  <path d="M 120 392 L 120 362 M 120 392 L 150 392" stroke="#4F8EF7" stroke-width="4" stroke-linecap="round" opacity="0.5"/>
+  <path d="M 392 392 L 392 362 M 392 392 L 362 392" stroke="#4F8EF7" stroke-width="4" stroke-linecap="round" opacity="0.5"/>
+</svg>

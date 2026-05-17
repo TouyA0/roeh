@@ -6,8 +6,12 @@ Thumbs.db
 .vscode/
 .idea/
 
-# Node (pour plus tard)
+# Node
 node_modules/
 dist/
 build/
 *.log
+
+# Rust / Tauri (build artifacts — plusieurs Go, ne jamais commiter)
+src-tauri/target/
+src-tauri/gen/
