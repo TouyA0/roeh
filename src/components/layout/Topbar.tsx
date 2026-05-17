@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useAppStore } from "@/store";
-import { Icons } from "@/components/ui";
+import { Icons, NotificationCenter } from "@/components/ui";
 import type { Status, Mode } from "@/types";
 
 // ─── Status pill ──────────────────────────────────────────────────────────
@@ -80,7 +80,7 @@ export function Topbar() {
       )}
 
       <div className="top-actions">
-        <button className="icon-btn" title="Notifications">{Icons.bell}</button>
+        <NotificationCenter />
         <button className="icon-btn" title="Paramètres" onClick={() => setRoute("settings")}>
           {Icons.settings}
         </button>
