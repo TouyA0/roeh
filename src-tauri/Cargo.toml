@@ -24,8 +24,8 @@ tokio              = { version = "1", features = ["full"] }
 log     = "0.4"
 env_logger = "0.11"
 
-# Database (will be used by db::)
-# rusqlite = { version = "0.31", features = ["bundled"] }  # uncomment when ready
+# Database
+rusqlite = { version = "0.31", features = ["bundled"] }
 
 [features]
 # This feature is used for production builds or when `devPath` points to the file system.

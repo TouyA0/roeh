@@ -6,6 +6,8 @@
 //!
 //! Couches : capture → causality → rules → ai → narration → ipc → frontend
 
+use tauri::Manager;
+
 mod capture;
 mod causality;
 mod rules;
@@ -18,6 +20,23 @@ pub fn run() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .setup(|app| {
+            // Répertoire de données : %APPDATA%\fr.gir-lg.roeh\ (Windows)
+            let data_dir = app.path().app_data_dir()
+                .expect("impossible de résoudre app_data_dir");
+            std::fs::create_dir_all(&data_dir)
+                .expect("impossible de créer le répertoire de données");
+
+            let db_path = data_dir.join("roeh.db");
+            log::info!("[db] ouverture : {}", db_path.display());
+
+            let db = db::Db::open(&db_path)
+                .expect("impossible d'ouvrir la base SQLite");
+
+            // Rend la base accessible à toutes les commandes IPC
+            app.manage(db);
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             ipc::get_status,
             ipc::get_events,
