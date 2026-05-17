@@ -1,11 +1,21 @@
-import { useState } from "react";
-import { HISTORY_ROWS } from "@/data/mock";
+import { useState, useEffect } from "react";
+import { invoke } from "@tauri-apps/api/core";
 import { Icons } from "@/components/ui";
+import type { HistoryRow } from "@/types";
 
 export function HistoryScreen() {
-  const [query, setQuery] = useState("");
+  const [rows,    setRows]    = useState<HistoryRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [query,   setQuery]   = useState("");
 
-  const filtered = HISTORY_ROWS.filter(
+  useEffect(() => {
+    invoke<HistoryRow[]>("get_history")
+      .then(setRows)
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
+  const filtered = rows.filter(
     (r) =>
       !query ||
       r.app.toLowerCase().includes(query.toLowerCase()) ||
@@ -53,34 +63,43 @@ export function HistoryScreen() {
           <span>App</span>
           <span>Gravité</span>
         </div>
-        {filtered.map((r, i) => (
-          <div key={i} className="hist-row">
-            <span className="t">{r.t}</span>
-            <span style={{ color: "var(--muted)", fontSize: 12 }}>{r.date}</span>
-            <span className="ev">{r.ev}</span>
-            <span className="app" style={{ fontFamily: "var(--font-mono)", fontSize: 12 }}>{r.app}</span>
-            <span className={`sev-tag ${r.sev}`}>
-              {r.sev === "ok" ? "normal" : r.sev === "warn" ? "à noter" : "intercepté"}
-            </span>
+
+        {loading ? (
+          <div style={{ padding: "24px 18px", color: "var(--muted)", fontSize: 13, textAlign: "center" }}>
+            Chargement…
           </div>
-        ))}
+        ) : filtered.length === 0 ? (
+          <div style={{ padding: "24px 18px", color: "var(--muted)", fontSize: 13, textAlign: "center" }}>
+            {query ? "Aucun résultat pour cette recherche." : "Aucun événement enregistré."}
+          </div>
+        ) : (
+          filtered.map((r, i) => (
+            <div key={i} className="hist-row">
+              <span className="t">{r.t}</span>
+              <span style={{ color: "var(--muted)", fontSize: 12 }}>{r.date}</span>
+              <span className="ev">{r.ev}</span>
+              <span className="app" style={{ fontFamily: "var(--font-mono)", fontSize: 12 }}>{r.app}</span>
+              <span className={`sev-tag ${r.sev}`}>
+                {r.sev === "ok" ? "normal" : r.sev === "warn" ? "à noter" : "intercepté"}
+              </span>
+            </div>
+          ))
+        )}
       </div>
 
-      {/* Insights */}
+      {/* Insights — statiques pour l'instant, seront calculés dynamiquement */}
       <div style={{ marginTop: 22, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
         <div className="card">
           <h3>Comparaison de période</h3>
           <p style={{ fontSize: 13, color: "var(--ink-soft)", margin: "0 0 10px", lineHeight: 1.55 }}>
-            Cette semaine, Spotify a contacté <strong>14 fois</strong> les mêmes 4 serveurs publicitaires
-            au lancement. La semaine dernière : <strong>9 fois</strong>. Pattern stable, en légère hausse.
+            Les patterns récurrents seront affichés ici au fil de la collecte.
           </p>
           <button className="chip">Voir comparatif complet</button>
         </div>
         <div className="card">
           <h3>Dérives détectées</h3>
           <p style={{ fontSize: 13, color: "var(--ink-soft)", margin: "0 0 10px", lineHeight: 1.55 }}>
-            <strong>Adobe Acrobat</strong> contacte aujourd'hui 4 endpoints de télémétrie là où il
-            n'en contactait que 2 il y a un mois. À surveiller.
+            Les comportements en hausse par rapport aux semaines précédentes apparaîtront ici.
           </p>
           <button className="chip">Examiner</button>
         </div>

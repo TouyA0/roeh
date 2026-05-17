@@ -84,6 +84,19 @@ export interface Session {
   events: RoehEvent[];
 }
 
+// ─── Événement DB (retourné par invoke("get_events")) ──────────────────────
+
+export interface LiveEvent {
+  id:          string;
+  time:        string;    // "HH:MM:SS"
+  sev:         Severity;
+  app:         string;
+  category:    string;
+  text:        string;    // narrative plain-text
+  intercepted: boolean;
+  detail:      Record<string, unknown>;
+}
+
 // ─── Historique ────────────────────────────────────────────────────────────
 
 export interface HistoryRow {

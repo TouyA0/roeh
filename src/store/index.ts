@@ -6,6 +6,7 @@ import type {
   Mode,
   ExpertTab,
   AppSettings,
+  LiveEvent,
 } from "@/types";
 
 // ─── State ─────────────────────────────────────────────────────────────────
@@ -20,8 +21,9 @@ interface AppState {
   status: Status;
   // Paramètres persistés
   settings: AppSettings;
-  // Event drawer ouvert (id de l'événement)
-  openEventId: string | null;
+  // Event drawer ouvert
+  openEventId: string | null;       // garde la compat ExpertView causal
+  openEvent:   LiveEvent | null;    // événement complet pour le Drawer
   // Interception modal
   interceptionOpen: boolean;
   // Nœud causal sélectionné
@@ -38,6 +40,7 @@ interface AppActions {
   updateSettings: (partial: Partial<AppSettings>) => void;
   completeOnboarding: (data: Pick<AppSettings, "name" | "pin"> & Partial<AppSettings>) => void;
   setOpenEventId: (id: string | null) => void;
+  setOpenEvent:   (event: LiveEvent | null) => void;
   setInterceptionOpen: (open: boolean) => void;
   setHighlightedNode: (id: string | null) => void;
 }
@@ -66,6 +69,7 @@ export const useAppStore = create<AppState & AppActions>()(
       status: "attention",
       settings: DEFAULT_SETTINGS,
       openEventId: null,
+      openEvent:   null,
       interceptionOpen: false,
       highlightedNode: null,
 
@@ -86,7 +90,8 @@ export const useAppStore = create<AppState & AppActions>()(
           settings: { ...state.settings, ...data },
         })),
 
-      setOpenEventId: (id) => set({ openEventId: id }),
+      setOpenEventId: (id) => set({ openEventId: id, openEvent: null }),
+      setOpenEvent:   (event) => set({ openEvent: event, openEventId: event?.id ?? null }),
       setInterceptionOpen: (open) => set({ interceptionOpen: open }),
       setHighlightedNode: (id) => set({ highlightedNode: id }),
     }),

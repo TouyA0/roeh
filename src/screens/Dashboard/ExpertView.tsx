@@ -1,13 +1,14 @@
-import { useState, memo } from "react";
+import { useState, useEffect, memo } from "react";
+import { invoke } from "@tauri-apps/api/core";
 import { useAppStore } from "@/store";
 import { WorldMap } from "@/components/ui";
 import {
-  FEED_ROWS,
   MAP_MARKERS,
   PROCESS_SCORES,
   CAUSAL_NODES,
   CAUSAL_EDGES,
 } from "@/data/mock";
+import type { FeedRow } from "@/types";
 
 // ─── KPIs ─────────────────────────────────────────────────────────────────
 
@@ -41,19 +42,36 @@ const ExpertKPIs = memo(function ExpertKPIs() {
 // ─── Realtime feed ───────────────────────────────────────────────────────
 
 function RealtimeFeed({ tall }: { tall?: boolean }) {
+  const [rows, setRows] = useState<FeedRow[]>([]);
+
+  useEffect(() => {
+    // Premier chargement
+    invoke<FeedRow[]>("get_feed").then(setRows).catch(console.error);
+
+    // Rafraîchissement toutes les 5 secondes
+    const id = setInterval(() => {
+      invoke<FeedRow[]>("get_feed").then(setRows).catch(console.error);
+    }, 5000);
+    return () => clearInterval(id);
+  }, []);
+
   return (
     <div className="feed" style={tall ? { minHeight: 320 } : {}}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
         <h4 style={{ margin: 0 }}>Flux temps réel</h4>
         <span style={{ fontFamily: "var(--font-mono)", fontSize: 9.5, color: "var(--menace)" }}>● LIVE</span>
       </div>
-      {FEED_ROWS.map((r, i) => (
-        <div key={i} className={`feed-row ${r.sev === "bad" ? "bad" : r.sev === "warn" ? "warn" : ""}`}>
-          <span className="t">{r.t}</span>
-          <span className="h">{r.h}</span>
-          <span className="v">{r.v}</span>
-        </div>
-      ))}
+      {rows.length === 0 ? (
+        <div style={{ color: "var(--muted)", fontSize: 12, paddingTop: 12 }}>Aucun flux détecté.</div>
+      ) : (
+        rows.map((r, i) => (
+          <div key={i} className={`feed-row ${r.sev === "bad" ? "bad" : r.sev === "warn" ? "warn" : ""}`}>
+            <span className="t">{r.t}</span>
+            <span className="h">{r.h}</span>
+            <span className="v">{r.v}</span>
+          </div>
+        ))
+      )}
     </div>
   );
 }

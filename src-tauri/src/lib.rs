@@ -33,6 +33,9 @@ pub fn run() {
             let db = db::Db::open(&db_path)
                 .expect("impossible d'ouvrir la base SQLite");
 
+            // Seed de développement si la base est vide
+            ipc::seed_if_empty(&db);
+
             // Rend la base accessible à toutes les commandes IPC
             app.manage(db);
             Ok(())

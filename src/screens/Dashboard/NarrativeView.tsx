@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { invoke } from "@tauri-apps/api/core";
 import { useAppStore } from "@/store";
-import { SESSIONS } from "@/data/mock";
 import { Icons } from "@/components/ui";
-import type { RoehEvent, Session } from "@/types";
+import type { LiveEvent } from "@/types";
 
 // ─── Filters ─────────────────────────────────────────────────────────────
 
@@ -39,7 +39,7 @@ function NarrativeFilters({
 
 const SEV_LABEL = { ok: "normal", warn: "à noter", bad: "intercepté" } as const;
 
-function Bubble({ event, onOpen }: { event: RoehEvent; onOpen: (e: RoehEvent) => void }) {
+function Bubble({ event, onOpen }: { event: LiveEvent; onOpen: (e: LiveEvent) => void }) {
   const cls = event.sev === "warn" ? "attention" : event.sev === "bad" ? "menace" : "";
   return (
     <div className={`bubble ${cls}`} onClick={() => onOpen(event)}>
@@ -51,7 +51,8 @@ function Bubble({ event, onOpen }: { event: RoehEvent; onOpen: (e: RoehEvent) =>
           <span>{event.category}</span>
           <span>·</span>
           <span>{event.app}</span>
-          <span className="sev">{SEV_LABEL[event.sev]}</span>
+          {event.intercepted && <span className="sev" style={{ color: "var(--menace)" }}>intercepté</span>}
+          {!event.intercepted && <span className="sev">{SEV_LABEL[event.sev]}</span>}
         </div>
         <div className="bubble-text">{event.text}</div>
       </div>
@@ -63,21 +64,14 @@ function Bubble({ event, onOpen }: { event: RoehEvent; onOpen: (e: RoehEvent) =>
   );
 }
 
-// ─── Session ──────────────────────────────────────────────────────────────
+// ─── Empty state ──────────────────────────────────────────────────────────
 
-function SessionBlock({ session, onOpen }: { session: Session; onOpen: (e: RoehEvent) => void }) {
+function EmptyState() {
   return (
-    <div className="session">
-      <div className="session-header">
-        <span className="session-time">{session.time}</span>
-        <span className="session-trigger">{session.trigger}</span>
-        <span className="session-line" />
-      </div>
-      <div className="session-events">
-        {session.events.map((ev) => (
-          <Bubble key={ev.id} event={ev} onOpen={onOpen} />
-        ))}
-      </div>
+    <div style={{ textAlign: "center", padding: "60px 0", color: "var(--muted)" }}>
+      <div style={{ fontSize: 32, marginBottom: 10 }}>🌿</div>
+      <div style={{ fontSize: 14, fontWeight: 500, color: "var(--ink-soft)" }}>Rien à signaler</div>
+      <div style={{ fontSize: 13, marginTop: 4 }}>Ro'eh surveille en silence.</div>
     </div>
   );
 }
@@ -85,19 +79,32 @@ function SessionBlock({ session, onOpen }: { session: Session; onOpen: (e: RoehE
 // ─── Main view ───────────────────────────────────────────────────────────
 
 export function NarrativeView() {
-  const setOpenEventId = useAppStore((s) => s.setOpenEventId);
+  const setOpenEvent = useAppStore((s) => s.setOpenEvent);
 
-  const [filter, setFilter] = useState<Filter>("Tout");
-  const [period, setPeriod] = useState<Period>("Jour");
+  const [events,  setEvents]  = useState<LiveEvent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter,  setFilter]  = useState<Filter>("Tout");
+  const [period,  setPeriod]  = useState<Period>("Jour");
 
-  const filteredSessions = SESSIONS.map((s) => ({
-    ...s,
-    events: s.events.filter((ev) => {
-      if (filter === "Réseau") return ev.category.startsWith("Réseau");
-      if (filter === "Système") return ev.category === "Système";
-      return true;
-    }),
-  })).filter((s) => s.events.length > 0);
+  useEffect(() => {
+    invoke<LiveEvent[]>("get_events")
+      .then(setEvents)
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
+  const filtered = events.filter((ev) => {
+    if (filter === "Réseau")  return ev.category.startsWith("Réseau");
+    if (filter === "Système") return ev.category === "Système";
+    return true;
+  });
+
+  // Groupe par date (extraite du champ `time` qui est "HH:MM:SS")
+  // On regroupera tout sous "Aujourd'hui" pour l'instant ;
+  // quand le backend renverra des sessions, on adaptera.
+  const groups: { label: string; events: LiveEvent[] }[] = filtered.length > 0
+    ? [{ label: "Aujourd'hui", events: filtered }]
+    : [];
 
   return (
     <>
@@ -105,10 +112,34 @@ export function NarrativeView() {
         <h1>Aujourd'hui sur ta machine</h1>
         <p>Voici ce qui s'est passé pendant que tu travaillais. Clique sur un événement pour voir les détails techniques.</p>
       </div>
-      <NarrativeFilters filter={filter} setFilter={setFilter} period={period} setPeriod={setPeriod} />
-      {filteredSessions.map((s) => (
-        <SessionBlock key={s.id} session={s} onOpen={(ev) => setOpenEventId(ev.id)} />
-      ))}
+
+      <NarrativeFilters
+        filter={filter} setFilter={setFilter}
+        period={period} setPeriod={setPeriod}
+      />
+
+      {loading ? (
+        <div style={{ textAlign: "center", color: "var(--muted)", padding: 40, fontSize: 13 }}>
+          Chargement des événements…
+        </div>
+      ) : groups.length === 0 ? (
+        <EmptyState />
+      ) : (
+        groups.map((g) => (
+          <div key={g.label} className="session">
+            <div className="session-header">
+              <span className="session-time">{g.label}</span>
+              <span className="session-trigger">Activité surveillée</span>
+              <span className="session-line" />
+            </div>
+            <div className="session-events">
+              {g.events.map((ev) => (
+                <Bubble key={ev.id} event={ev} onOpen={(e) => setOpenEvent(e)} />
+              ))}
+            </div>
+          </div>
+        ))
+      )}
     </>
   );
 }
